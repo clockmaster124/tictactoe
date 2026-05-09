@@ -1,1 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>♛ AI Tic Tac Toe</title>
 
+<style>
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',sans-serif;
+}
+
+body{
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:
+  radial-gradient(circle at top,#5a4300 0%,#111 35%,#000 100%);
+  position:relative;
+  color:#ffd700;
+}
+
+/* Background Glow */
+
+body::before{
+  content:"";
+  position:absolute;
+  width:650px;
+  height:650px;
+  background:radial-gradient(circle,#ffd70018 0%,transparent 70%);
+  animation:pulse 7s infinite ease-in-out;
+}
+
+@keyframes pulse{
+  0%,100%{
+    transform:scale(1);
+  }
+  50%{
+    transform:scale(1.15);
+  }
+}
+
+/* Floating Icons */
+
+.float{
+  position:absolute;
+  font-size:1rem;
+  opacity:.13;
+  animation:float 12s linear infinite;
+}
+
+@keyframes float{
+  from{
+    transform:translateY(110vh) rotate(0deg);
+  }
+  to{
+    transform:translateY(-120vh) rotate(360deg);
+  }
+}
+
+/* Main Card */
+
+.screen{
+  width:345px;
+  padding:12px;
+  border-radius:22px;
+  background:rgba(10,10,10,.96);
+  border:2px solid #d4af37;
+  box-shadow:
+  0 0 22px #ffd70055,
+  inset 0 0 22px #000;
+  position:relative;
+  z-index:2;
+  text-align:center;
+  animation:show .6s ease;
+  backdrop-filter:blur(8px);
+}
+
+@keyframes show{
+  from{
+    opacity:0;
+    transform:translateY(15px) scale(.96);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+}
+
+.hidden{
+  display:none;
+}
+
+/* Title */
+
+h1{
+  font-size:1.7rem;
+  margin-bottom:2px;
+  color:#ffd700;
+  text-shadow:0 0 14px #ffd70099;
+}
+
+.subtitle{
+  font-size:.78rem;
+  color:#f1d982;
+  margin-bottom:10px;
+}
+
+/* Symbols */
+
+.symbols{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+.symbol{
+  flex:1;
+  padding:10px;
+  border-radius:15px;
+  border:2px solid #d4af37;
+  background:#111;
+  font-size:1.5rem;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.symbol:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 14px #ffd70066;
+}
+
+.selected{
+  background:linear-gradient(135deg,#ffd700,#b8860b);
+  color:#000;
+  box-shadow:0 0 18px #ffd700;
+}
+
+/* Difficulty */
+
+select{
+  width:100%;
+  padding:10px;
+  border-radius:12px;
+  border:2px solid #d4af37;
+  background:#111;
+  color:#ffd700;
+  outline:none;
+  font-size:.9rem;
+  margin-bottom:10px;
+}
+
+/* Buttons */
+
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(135deg,#ffd700,#b8860b);
+  color:#000;
+  font-weight:bold;
+  cursor:pointer;
+  font-size:.9rem;
+  transition:.3s;
+  margin-top:6px;
+}
+
+button:hover{
+  transform:scale(1.03);
+  box-shadow:0 0 20px #ffd70088;
+}
+
+/* Status */
+
+.status{
+  min-height:20px;
+  margin-bottom:8px;
+  color:#ffe58f;
+  font-size:.9rem;
+}
+
+/* Board */
+
+.board{
+  width:246px;
+  margin:0 auto 10px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:7px;
+}
+
+.cell{
+  width:77px;
+  height:77px;
+  border-radius:16px;
+  border:2px solid #d4af37;
+  background:#111;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:2.2rem;
+  cursor:pointer;
+  transition:.22s;
+  animation:cellPop .22s ease;
+}
+
+@keyframes cellPop{
+  from{
+    transform:scale(.7);
+    opacity:0;
+  }
+  to{
+    transform:scale(1);
+    opacity:1;
+  }
+}
+
+.cell:hover{
+  transform:scale(1.04);
+  background:#1a1a1a;
+  box-shadow:0 0 14px #ffd70066;
+}
+
+.x{
+  color:#ffd700;
+  text-shadow:0 0 12px #ffd700;
+}
+
+.o{
+  color:#fff3c1;
+  text-shadow:0 0 12px #fff3c1;
+}
+
+/* Win Effect */
+
+.win{
+  animation:winGlow .7s infinite alternate;
+}
+
+@keyframes winGlow{
+  from{
+    box-shadow:0 0 8px #ffd70066;
+  }
+  to{
+    box-shadow:0 0 20px #ffd700;
+    transform:scale(1.05);
+  }
+}
+
+/* Small Screens */
+
+@media(max-height:700px){
+
+  .screen{
+    transform:scale(.9);
+  }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Floating Background -->
+
+<div class="float" style="left:8%;animation-delay:0s;">♛</div>
+<div class="float" style="left:25%;animation-delay:2s;">✨</div>
+<div class="float" style="left:42%;animation-delay:1s;">🔥</div>
+<div class="float" style="left:58%;animation-delay:4s;">🎮</div>
+<div class="float" style="left:75%;animation-delay:2s;">👑</div>
+<div class="float" style="left:90%;animation-delay:5s;">⚜</div>
+
+<!-- HOME -->
+
+<div class="screen" id="homeScreen">
+
+  <h1>♛ AI Tic Tac Toe</h1>
+
+  <div class="subtitle">
+    ⚔️ Beat the Golden AI ⚔️
+  </div>
+
+  <div class="symbols">
+
+    <div class="symbol selected"
+    id="xBtn"
+    onclick="selectSymbol('X')">
+      ❌
+    </div>
+
+    <div class="symbol"
+    id="oBtn"
+    onclick="selectSymbol('O')">
+      ⭕
+    </div>
+
+  </div>
+
+  <select id="difficulty">
+
+    <option value="rookie">😅 Rookie</option>
+    <option value="novice">🙂 Novice</option>
+    <option value="intermediate">😎 Intermediate</option>
+    <option value="advanced">🔥 Advanced</option>
+    <option value="expert">👑 Expert</option>
+
+  </select>
+
+  <button onclick="startGame()">
+    🎮 Start Battle
+  </button>
+
+</div>
+
+<!-- GAME -->
+
+<div class="screen hidden" id="gameScreen">
+
+  <h1>⚔️ Arena</h1>
+
+  <div class="status" id="status">
+    🎯 Your Turn
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <button onclick="playAgain()">
+    🔄 Play Again
+  </button>
+
+  <button onclick="goHome()">
+    🏠 Home Screen
+  </button>
+
+</div>
+
+<script>
+
+const homeScreen =
+document.getElementById("homeScreen");
+
+const gameScreen =
+document.getElementById("gameScreen");
+
+const boardEl =
+document.getElementById("board");
+
+const statusEl =
+document.getElementById("status");
+
+let player = "X";
+let ai = "O";
+let difficulty = "rookie";
+
+let board = [];
+let currentTurn = "X";
+let gameOver = false;
+
+const wins = [
+[0,1,2],[3,4,5],[6,7,8],
+[0,3,6],[1,4,7],[2,5,8],
+[0,4,8],[2,4,6]
+];
+
+/* Select Symbol */
+
+function selectSymbol(sym){
+
+  player = sym;
+  ai = sym==="X" ? "O" : "X";
+
+  document
+  .getElementById("xBtn")
+  .classList.remove("selected");
+
+  document
+  .getElementById("oBtn")
+  .classList.remove("selected");
+
+  if(sym==="X"){
+    document
+    .getElementById("xBtn")
+    .classList.add("selected");
+  }else{
+    document
+    .getElementById("oBtn")
+    .classList.add("selected");
+  }
+
+}
+
+/* Start Game */
+
+function startGame(){
+
+  difficulty =
+  document.getElementById("difficulty").value;
+
+  board =
+  ["","","","","","","","",""];
+
+  currentTurn = "X";
+
+  gameOver = false;
+
+  homeScreen.classList.add("hidden");
+  gameScreen.classList.remove("hidden");
+
+  renderBoard();
+
+  if(ai==="X"){
+
+    statusEl.innerHTML =
+    "🤖 AI Starts...";
+
+    setTimeout(aiMove,550);
+
+  }else{
+
+    statusEl.innerHTML =
+    "🎯 Your Turn";
+
+  }
+
+}
+
+/* Home */
+
+function goHome(){
+
+  gameScreen.classList.add("hidden");
+  homeScreen.classList.remove("hidden");
+
+}
+
+/* Play Again */
+
+function playAgain(){
+
+  startGame();
+
+}
+
+/* Render */
+
+function renderBoard(){
+
+  boardEl.innerHTML = "";
+
+  board.forEach((cell,index)=>{
+
+    const div =
+    document.createElement("div");
+
+    div.classList.add("cell");
+
+    if(cell==="X") div.classList.add("x");
+    if(cell==="O") div.classList.add("o");
+
+    div.innerHTML = cell;
+
+    div.onclick =
+    ()=>playerMove(index);
+
+    boardEl.appendChild(div);
+
+  });
+
+}
+
+/* Player Move */
+
+function playerMove(index){
+
+  if(gameOver) return;
+  if(currentTurn!==player) return;
+  if(board[index]!=="") return;
+
+  board[index]=player;
+
+  renderBoard();
+
+  if(checkWinner(player)){
+
+    finishGame("🏆 YOU WIN!");
+
+    return;
+  }
+
+  if(full()){
+
+    finishGame("🤝 DRAW!");
+
+    return;
+  }
+
+  currentTurn = ai;
+
+  statusEl.innerHTML =
+  "🤖 AI Thinking...";
+
+  setTimeout(aiMove,420);
+
+}
+
+/* AI Move */
+
+function aiMove(){
+
+  if(gameOver) return;
+
+  let move;
+
+  switch(difficulty){
+
+    case "rookie":
+      move=randomMove();
+      break;
+
+    case "novice":
+      move=
+      Math.random()<0.3 ?
+      bestMove() :
+      randomMove();
+      break;
+
+    case "intermediate":
+      move=
+      Math.random()<0.55 ?
+      bestMove() :
+      randomMove();
+      break;
+
+    case "advanced":
+      move=
+      Math.random()<0.82 ?
+      bestMove() :
+      randomMove();
+      break;
+
+    case "expert":
+      move=bestMove();
+      break;
+
+  }
+
+  board[move]=ai;
+
+  renderBoard();
+
+  if(checkWinner(ai)){
+
+    finishGame("💀 AI WINS!");
+
+    return;
+  }
+
+  if(full()){
+
+    finishGame("🤝 DRAW!");
+
+    return;
+  }
+
+  currentTurn = player;
+
+  statusEl.innerHTML =
+  "🎯 Your Turn";
+
+}
+
+/* Random */
+
+function randomMove(){
+
+  let available =
+  board
+  .map((v,i)=>v===""?i:null)
+  .filter(v=>v!==null);
+
+  return available[
+  Math.floor(Math.random()*available.length)
+  ];
+
+}
+
+/* Best Move */
+
+function bestMove(){
+
+  let bestScore=-Infinity;
+  let move;
+
+  for(let i=0;i<9;i++){
+
+    if(board[i]===""){
+
+      board[i]=ai;
+
+      let score =
+      minimax(board,false);
+
+      board[i]="";
+
+      if(score>bestScore){
+
+        bestScore=score;
+        move=i;
+
+      }
+
+    }
+
+  }
+
+  return move;
+
+}
+
+/* Minimax */
+
+function minimax(newBoard,isMax){
+
+  if(check(ai,newBoard)) return 1;
+  if(check(player,newBoard)) return -1;
+  if(newBoard.every(c=>c!=="")) return 0;
+
+  if(isMax){
+
+    let best=-Infinity;
+
+    for(let i=0;i<9;i++){
+
+      if(newBoard[i]===""){
+
+        newBoard[i]=ai;
+
+        best=Math.max(
+        best,
+        minimax(newBoard,false)
+        );
+
+        newBoard[i]="";
+
+      }
+
+    }
+
+    return best;
+
+  }else{
+
+    let best=Infinity;
+
+    for(let i=0;i<9;i++){
+
+      if(newBoard[i]===""){
+
+        newBoard[i]=player;
+
+        best=Math.min(
+        best,
+        minimax(newBoard,true)
+        );
+
+        newBoard[i]="";
+
+      }
+
+    }
+
+    return best;
+
+  }
+
+}
+
+/* Check Winner */
+
+function check(sym,b){
+
+  return wins.some(combo=>
+  combo.every(i=>b[i]===sym)
+  );
+
+}
+
+function checkWinner(sym){
+
+  let won=false;
+
+  wins.forEach(combo=>{
+
+    if(combo.every(i=>board[i]===sym)){
+
+      won=true;
+
+      combo.forEach(i=>{
+
+        boardEl
+        .children[i]
+        .classList.add("win");
+
+      });
+
+    }
+
+  });
+
+  return won;
+
+}
+
+/* Full */
+
+function full(){
+
+  return board.every(c=>c!=="");
+
+}
+
+/* Finish */
+
+function finishGame(msg){
+
+  gameOver=true;
+
+  statusEl.innerHTML =
+  msg + " 🎉";
+
+}
+
+</script>
+
+</body>
+</html>
